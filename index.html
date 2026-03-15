@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trackr — Vehicle Repair Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
+  .topbar { background: #1a1a2e; color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-size: 18px; font-weight: 700; } .brand span { color: #f5a623; }
+  .tabs { display: flex; gap: 4px; background: rgba(255,255,255,0.1); padding: 4px; border-radius: 8px; }
+  .tab { padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; color: rgba(255,255,255,0.6); background: transparent; font-family: inherit; }
+  .tab.active { background: #f5a623; color: #1a1a2e; }
+  .screen { display: none; max-width: 620px; margin: 24px auto; padding: 0 16px; }
+  .screen.active { display: block; }
+  .card { background: #fff; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .card h3 { font-size: 12px; color: #888; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  label { font-size: 11px; font-weight: 600; color: #555; display: block; margin-bottom: 4px; }
+  input, select { width: 100%; padding: 9px 12px; border: 1.5px solid #e8e8e8; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; }
+  input:focus, select:focus { border-color: #1a1a2e; }
+  .btn { width: 100%; padding: 11px; background: #1a1a2e; color: #fff; border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 4px; }
+  .btn:hover { background: #2d2d4e; }
+  .job-card { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); border-left: 4px solid #ddd; }
+  .job-card.received { border-left-color: #94a3b8; }
+  .job-card.inspection { border-left-color: #f59e0b; }
+  .job-card.approved { border-left-color: #3b82f6; }
+  .job-card.inprogress { border-left-color: #8b5cf6; }
+  .job-card.ready { border-left-color: #22c55e; }
+  .job-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .job-reg { font-size: 15px; font-weight: 700; color: #1a1a2e; }
+  .job-id { font-size: 10px; color: #aaa; font-family: monospace; }
+  .job-info { font-size: 12px; color: #666; margin-bottom: 10px; }
+  .pills { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pill { padding: 5px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; cursor: pointer; border: 1.5px solid #e8e8e8; background: #f8f8f8; color: #666; font-family: inherit; }
+  .pill.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+  .pill.ready-active { background: #22c55e; border-color: #22c55e; color: #fff; }
+  .search-row { display: flex; gap: 8px; }
+  .search-row input { flex: 1; }
+  .search-btn { padding: 9px 18px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .tracker { display: none; margin-top: 16px; }
+  .tracker.show { display: block; }
+  .tc-reg { font-size: 22px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
+  .tc-info { font-size: 13px; color: #666; margin-bottom: 20px; }
+  .steps { padding-left: 24px; border-left: 2px solid #e8e8e8; display: flex; flex-direction: column; gap: 20px; }
+  .step { position: relative; }
+  .step-dot { width: 14px; height: 14px; border-radius: 50%; background: #e8e8e8; position: absolute; left: -31px; top: 2px; border: 2px solid #e8e8e8; }
+  .step-dot.done { background: #22c55e; border-color: #22c55e; }
+  .step-dot.active { background: #3b82f6; border-color: #3b82f6; }
+  .step-title { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+  .step-title.dim { color: #bbb; font-weight: 400; }
+  .step-desc { font-size: 11px; color: #888; margin-top: 2px; }
+  .error-msg { font-size: 13px; color: #e53e3e; text-align: center; padding: 16px; display: none; }
+  .error-msg.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Track<span>it</span></div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('garage')">Garage View</button>
+    <button class="tab" onclick="showTab('customer')">Customer View</button>
+  </div>
+</div>
+
+<!-- GARAGE -->
+<div class="screen active" id="screen-garage">
+  <div class="card">
+    <h3>Create new job</h3>
+    <div class="grid2">
+      <div><label>Vehicle Reg No.</label><input id="inp-reg" placeholder="TS09AB1234" /></div>
+      <div><label>Customer Name</label><input id="inp-name" placeholder="Ravi Kumar" /></div>
+    </div>
+    <div class="grid2">
+      <div><label>Phone</label><input id="inp-phone" placeholder="9876543210" /></div>
+      <div><label>Est. Time</label>
+        <select id="inp-time">
+          <option>1-2 hrs</option><option>2-4 hrs</option>
+          <option>4-8 hrs</option><option>1-2 days</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="createJob()">+ Create Job Ticket</button>
+  </div>
+  <div id="jobs-list"></div>
+</div>
+
+<!-- CUSTOMER -->
+<div class="screen" id="screen-customer">
+  <div class="card">
+    <h3>Track your vehicle</h3>
+    <div class="search-row">
+      <input id="search-inp" placeholder="Enter Job ID e.g. JOB-001" />
+      <button class="search-btn" onclick="trackJob()">Track</button>
+    </div>
+    <div class="error-msg" id="err-msg">No vehicle found. Check your Job ID.</div>
+  </div>
+  <div class="card tracker" id="tracker">
+    <div class="tc-reg" id="tc-reg"></div>
+    <div class="tc-info" id="tc-info"></div>
+    <div class="steps" id="steps"></div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000'
+const STATUSES = [
+  { key:'received',   label:'Vehicle Received',      desc:'Vehicle has arrived at the garage.' },
+  { key:'inspection', label:'Inspection / Diagnosis', desc:'Mechanic is inspecting the vehicle.' },
+  { key:'approved',   label:'Repair Approved',        desc:'Repair approved, starting soon.' },
+  { key:'inprogress', label:'Repair in Progress',     desc:'Mechanic is actively working.' },
+  { key:'ready',      label:'Ready for Pickup',       desc:'Vehicle is ready. Please collect it.' },
+]
+
+function showTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+  document.getElementById('screen-' + tab).classList.add('active')
+  event.target.classList.add('active')
+}
+
+async function loadJobs() {
+  const res = await fetch(API + '/jobs')
+  const jobs = await res.json()
+  const list = document.getElementById('jobs-list')
+  list.innerHTML = jobs.map(job => `
+    <div class="job-card ${job.status}" id="card-${job.id}">
+      <div class="job-top">
+        <div class="job-reg">${job.reg}</div>
+        <div class="job-id">${job.id}</div>
+      </div>
+      <div class="job-info">${job.customer} · ${job.phone} · Est. ${job.time}</div>
+      <div class="pills">
+        ${STATUSES.map(s => `
+          <button class="pill ${job.status === s.key ? (s.key==='ready'?'ready-active':'active') : ''}"
+            onclick="updateStatus('${job.id}', '${s.key}')">
+            ${s.label}
+          </button>`).join('')}
+      </div>
+    </div>
+  `).join('')
+}
+
+async function createJob() {
+  const reg = document.getElementById('inp-reg').value.trim().toUpperCase()
+  const customer = document.getElementById('inp-name').value.trim()
+  const phone = document.getElementById('inp-phone').value.trim()
+  const time = document.getElementById('inp-time').value
+  if (!reg || !customer) { alert('Please fill Vehicle Reg and Customer Name'); return }
+  await fetch(API + '/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reg, customer, phone, time })
+  })
+  document.getElementById('inp-reg').value = ''
+  document.getElementById('inp-name').value = ''
+  document.getElementById('inp-phone').value = ''
+  loadJobs()
+}
+
+async function updateStatus(id, status) {
+  await fetch(API + '/jobs/' + id + '/status', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  })
+  loadJobs()
+}
+
+async function trackJob() {
+  const id = document.getElementById('search-inp').value.trim().toUpperCase()
+  const errMsg = document.getElementById('err-msg')
+  const tracker = document.getElementById('tracker')
+  const res = await fetch(API + '/jobs/' + id)
+  if (!res.ok) { errMsg.classList.add('show'); tracker.classList.remove('show'); return }
+  errMsg.classList.remove('show')
+  const job = await res.json()
+  const si = STATUSES.findIndex(s => s.key === job.status)
+  document.getElementById('tc-reg').textContent = job.reg
+  document.getElementById('tc-info').innerHTML = `<strong>${job.customer}</strong> · Est. ${job.time}`
+  document.getElementById('steps').innerHTML = STATUSES.map((s, i) => `
+    <div class="step">
+      <div class="step-dot ${i < si ? 'done' : i === si ? 'active' : ''}"></div>
+      <div class="step-title ${i > si ? 'dim' : ''}">${s.label}</div>
+      ${i <= si ? `<div class="step-desc">${s.desc}</div>` : ''}
+    </div>
+  `).join('')
+  tracker.classList.add('show')
+}
+
+loadJobs()
+</script>
+</body>
+</html>

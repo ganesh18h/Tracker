@@ -1,0 +1,36 @@
+{
+  "jobs": [
+    {
+      "id": "JOB-001",
+      "reg": "TS09AB1234",
+      "customer": "Ravi Kumar",
+      "phone": "9876500001",
+      "time": "2-4 hrs",
+      "status": "ready"
+    },
+    {
+      "id": "JOB-002",
+      "reg": "AP28BV3312",
+      "customer": "Lakshmi Devi",
+      "phone": "9876500002",
+      "time": "1-2 hrs",
+      "status": "inprogress"
+    },
+    {
+      "id": "JOB-003",
+      "reg": "AP24AS2977",
+      "customer": "Ganesh",
+      "phone": "1234567890",
+      "time": "4-8 hrs",
+      "status": "inprogress"
+    },
+    {
+      "id": "JOB-004",
+      "reg": "AP24AS2997",
+      "customer": "GANESH",
+      "phone": "1234565434",
+      "time": "4-8 hrs",
+      "status": "ready"
+    }
+  ]
+}
