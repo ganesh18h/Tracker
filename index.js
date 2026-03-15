@@ -8,8 +8,8 @@ app.use(express.json())
 app.use(express.static('.'))
 
 const supabase = createClient(
-  'https://mkbkbxhnfziouextqwsa.supabase.co',
-  'sb_publishable_FPMDun6m0OHYoO47QYveCw_-EDgfLxa'
+  process.env.SUPABASE_URL || 'https://mkbkbxhnfziouextqwsa.supabase.co',
+  process.env.SUPABASE_KEY || 'sb_publishable_FPMDun6m0OHYoO47QYveCw_-EDgfLxa'
 )
 
 app.get('/jobs/:id', async (req, res) => {
