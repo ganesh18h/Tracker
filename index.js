@@ -12,19 +12,19 @@ const supabase = createClient(
   'sb_publishable_FPMDun6m0OHYoO47QYveCw_-EDgfLxa'
 )
 
-app.get('/jobs', async (req, res) => {
+app.get('/jobs/:id', async (req, res) => {
+  const query = req.params.id.toUpperCase().trim()
+  console.log('Searching for:', JSON.stringify(query))
   const { data, error } = await supabase.from('jobs').select('*')
   if (error) return res.status(500).json({ error: error.message })
-  res.json(data)
-})
-
-app.get('/jobs', async (req, res) => {
-  const { data, error } = await supabase
-    .from('jobs')
-    .select('*')
-    .order('id', { ascending: true })
-  if (error) return res.status(500).json({ error: error.message })
-  res.json(data)
+  console.log('All regs:', data.map(j => JSON.stringify(j.reg)))
+  const job = data.find(j =>
+    j.id.toUpperCase().trim() === query ||
+    j.reg.toUpperCase().trim() === query
+  )
+  console.log('Found job:', job ? job.id : 'NOT FOUND')
+  if (!job) return res.status(404).json({ error: 'Job not found' })
+  res.json(job)
 })
 
 app.post('/jobs', async (req, res) => {
